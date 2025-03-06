@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Czat dla dwóch osób</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.9.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.9.3/firebase-database.js"></script>
+</head>
+<body>
+    <h2>Czat między telefonem a komputerem</h2>
+
+    <div id="chatBox" style="width: 100%; height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <!-- Wiadomości będą wyświetlane tutaj -->
+    </div>
+
+    <input type="text" id="messageInput" placeholder="Napisz wiadomość..." style="width: calc(100% - 80px); padding: 10px; font-size: 16px;">
+    
+    <button id="sendBtn" onclick="sendMessage()" style="padding: 10px; font-size: 16px;">Wyślij</button>
+    
+    <button id="clearHistoryBtn" onclick="clearChatHistory()" style="padding: 10px; font-size: 16px; margin-top: 10px; background-color: red; color: white;">Usuń historię</button>
+
+    <script>
+        // Konfiguracja Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY", // Wstaw tutaj swoje dane z Firebase
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
+        };
+
+        // Inicjalizacja Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database(app);
+
+        const chatRef = db.ref('chat'); // Odwołanie do sekcji "chat" w bazie danych Firebase
+
+        // Funkcja do wysyłania wiadomości
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (message) {
+                // Dodanie wiadomości do bazy danych Firebase
+                chatRef.push().set({
+                    message: message,
+                    user: 'user' + (Math.random() < 0.5 ? '1' : '2'), // Losowy użytkownik (user1 lub user2)
+                    timestamp: Date.now()
+                });
+
+                messageInput.value = ''; // Czyści pole tekstowe po wysłaniu wiadomości
+                messageInput.focus(); // Ustaw fokus na pole tekstowe
+            }
+        }
+
+        // Funkcja do czyszczenia historii czatu
+        function clearChatHistory() {
+            chatRef.remove(); // Usuwanie wszystkich wiadomości z Firebase
+        }
+
+        // Funkcja do ładowania wiadomości z Firebase w czasie rzeczywistym
+        chatRef.on('child_added', (snapshot) => {
+            const data = snapshot.val();
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.innerText = `${data.user}: ${data.message}`;
+            messageDiv.style.padding = '8px';
+            messageDiv.style.margin = '5px 0';
+            messageDiv.style.borderRadius = '5px';
+
+            if (data.user === 'user1') {
+                messageDiv.style.backgroundColor = '#d1f7d1'; // Kolor dla user1
+                messageDiv.style.textAlign = 'left';
+            } else {
+                messageDiv.style.backgroundColor = '#f1d1d1'; // Kolor dla user2
+                messageDiv.style.textAlign = 'right';
+            }
+
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // Przewijanie do ostatniej wiadomości
+        });
+
+    </script>
+</body>
+</html>
